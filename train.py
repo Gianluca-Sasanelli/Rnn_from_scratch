@@ -1,45 +1,60 @@
-import os, pickle, datetime
+import os, pickle, datetime, yaml, argparse
 import numpy as np
 from model import *
 import torch.nn.functional as F
 
+parser = argparse.ArgumentParser()
+parser.add_argument("--config", type = str, required = True, help = "config path")
+args = parser.parse_args()
+config_path = args.config
+with open(config_path) as file:
+    config = yaml.safe_load(file)
+
 device = "cuda"
 data_dir = r"C:\Users\Gianl\Desktop\RNN-repo\MyRNN\data"
 dataset = "shakespeare"
+logging_params = config["logging_parameters"]
 meta = r"C:\Users\Gianl\Desktop\RNN-repo\MyRNN\data\meta.pkl"
-model = "from_scratch"
+
 with open(meta, "rb") as f:
     meta = pickle.load(f)
     decode = meta["itos"]
     encode = meta["stoi"]
     vocab_size = meta["vocab_size"]
 # logging
-init_from = "scratch"
-log = 50
-iter_max = 5000
-eval_iters = 20
-eval_interval = 200
-out_dir = r"C:\Users\Gianl\Desktop\RNN-repo\MyRNN\output\2_layers" + os.sep + model
+init_from = logging_params["init_from"]
+log = logging_params["log"]
+iter_max = logging_params["iter_max"]
+eval_iters = logging_params["eval_iters"]
+eval_interval = logging_params["eval_interval"]
+out_dir = logging_params["out_dir"]
 if not os.path.exists(out_dir):
     os.makedirs(out_dir)
-sampling_duringtraining = True
+sampling_duringtraining = logging_params["sampling_duringtraining"]
 # parameters
-context = 128
-batch_size = 512
-hidden_dim = 512
-n_layers = 2
+model_params = config["model_data_parameters"]
+context = model_params["context"]
+batch_size = model_params["batch_size"]
+hidden_dim = model_params["hidden_dim"]
+n_layers = model_params["n_layers"]
+model = model_params["model"]
+
 #training
-max_lr = 0.005
-gamma = 0.90
+training_params = config["training_parameters"]
+max_lr = training_params["max_lr"]
+gamma = training_params["gamma"]
 #sampling
-start = "\n"
-num_samples = 1
+start = training_params["start"]
+num_samples = training_params["num_samples"]
+del config
+del training_params
+del model_params
 x = encode[start]
 x = torch.tensor([x], dtype = torch.int64, device = device).unsqueeze(0)
 if model == "from_scratch":
     model_args = dict(vocab_size = vocab_size, hidden_dim = hidden_dim, n_layers = n_layers)
 else:
-    model_args = model_args = dict(vocab_size = vocab_size, hidden_dim = hidden_dim, n_layers = n_layers, model = model)
+    model_args = dict(vocab_size = vocab_size, hidden_dim = hidden_dim, n_layers = n_layers, model = model)
 iter_num = 0
 best_val_losses = 1e9
 if init_from == "scratch":

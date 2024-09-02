@@ -33,13 +33,13 @@ class RNNModel(nn.Module):
         nn.init.zeros_(self.decoder.bias)
         nn.init.uniform_(self.decoder.weight, 0, 0.02)
 
-    def forward(self, input, hidden= None, targets = None):
+    def forward(self, input, hidden_states= None, targets = None):
         #taking hidden as (h,c) if LSTM else h
         B,C = input.size()
-        if hidden is None:
-            self.init_hidden(B)
+        if hidden_states is None:
+            hidden_states = self.init_hidden(B)
         emb = self.drop(self.encoder(input))
-        output, hidden = self.rnn(emb, hidden)
+        output, hidden_states = self.rnn(emb, hidden_states)
         output = self.drop(output)
         decoded = self.decoder(output)
         decoded = decoded.view(B, C, -1)
@@ -48,7 +48,7 @@ class RNNModel(nn.Module):
             loss = F.cross_entropy(decoded, targets.view(-1))
         else:
             loss = None
-        return decoded, hidden, loss
+        return decoded, hidden_states, loss
 
     def init_hidden(self, batch_size):
         # taking the device and data type of weiths 
@@ -63,14 +63,14 @@ class RNNModel(nn.Module):
         return sum(p.numel() for p in self.parameters() if p.requires_grad)
     
     @torch.no_grad()
-    def generate(self, input: torch.Tensor= None, new_tokens: int = 64, top_k:int = 200, temperature: float = 1.0, decode= None):
+    def generate(self, input: torch.Tensor= None, new_tokens: int = 64,  temperature: float = 1.0, decode= None):
         self.eval()
         text = []
         if input is None:
             input = torch.randint(self.vocab_size, (1,1), dtype= torch.long).to(device)
-        hidden = self.init_hidden(1)
+        hidden_states = self.init_hidden(1)
         for i in range(new_tokens):
-            output, hidden,_ = self(input, hidden)
+            output, hidden_states,_ = self(input, hidden_states)
             logits = output[0, -1].squeeze().div(temperature).exp()
             logits_idx = torch.multinomial(logits, 1).unsqueeze(0)
             # print(f"Toekns {i}| Input: {input.shape}| logits_idx: {logits_idx.shape}")

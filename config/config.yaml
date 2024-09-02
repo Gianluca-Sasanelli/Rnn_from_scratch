@@ -1,0 +1,23 @@
+##logging
+logging_parameters:
+  log: 50
+  iter_max: 5000
+  eval_iters: 20
+  eval_interval: 200
+  out_dir: C:\Users\Gianl\Desktop\RNN-repo\MyRNN\output\2_layers\LSTM
+  sampling_duringtraining: True
+  init_from: "scratch"
+
+model_data_parameters:
+  context: 128
+  batch_size: 512
+  hidden_dim: 512
+  n_layers: 2
+  model: "LSTM"
+  
+training_parameters:
+  max_lr: 0.005
+  gamma: 0.90
+  start: "\n"
+  num_samples: 1
+
