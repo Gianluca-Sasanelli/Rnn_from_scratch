@@ -1,6 +1,6 @@
 ##logging
 logging_parameters:
-  log: 50
+  log: 100
   iter_max: 5000
   eval_iters: 20
   eval_interval: 200
@@ -9,7 +9,7 @@ logging_parameters:
   init_from: "scratch"
 
 model_data_parameters:
-  context: 128
+  context: 256
   batch_size: 512
   hidden_dim: 512
   n_layers: 2

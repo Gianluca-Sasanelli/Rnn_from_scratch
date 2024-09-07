@@ -81,7 +81,16 @@ class RNNModel(nn.Module):
               
         
 class LSTMCell(nn.Module):
-    """Simple LSTMCell made from scratch. For more information look at: https://arxiv.org/pdf/1402.1128"""
+    """Simple LSTMCell made from scratch.  The idea of LSTM is to remove the problem of
+    vanishing gradients experienced by RNNs. Here, there are two hidden states: h, the short-term memory
+    and c, the long-term memory. 
+    The new h is computed by the output gate (linear layer taking x, prev_h as inputs) and the tanh of the current 
+    long-term memory.
+    The current long term memory is computed with the forget gate multiplied by the prev long term and
+    by the input multiplied by the cell gate. So, some feature is added by the input gate and some removed by 
+    the forget gate.
+    For more information look at: https://arxiv.org/pdf/1402.1128.
+    """
     def __init__(self, hidden_dim):
         super().__init__()
         self.hidden_dim = hidden_dim
