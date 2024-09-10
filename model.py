@@ -29,6 +29,7 @@ class RNNModel(nn.Module):
         self.init_weights()
         
     def init_weights(self):
+        #Init weights with uniform distribution (as per Pytorch)
         nn.init.uniform_(self.encoder.weight, 0, 0.02)
         nn.init.zeros_(self.decoder.bias)
         nn.init.uniform_(self.decoder.weight, 0, 0.02)
@@ -38,6 +39,7 @@ class RNNModel(nn.Module):
         B,C = input.size()
         if hidden_states is None:
             hidden_states = self.init_hidden(B)
+        #embeddings of the inputs
         emb = self.drop(self.encoder(input))
         output, hidden_states = self.rnn(emb, hidden_states)
         output = self.drop(output)
@@ -51,7 +53,7 @@ class RNNModel(nn.Module):
         return decoded, hidden_states, loss
 
     def init_hidden(self, batch_size):
-        # taking the device and data type of weiths 
+        # taking the device and data type of weights 
         weight = next(self.parameters())
         if self.model == "GRU":
             hidden = weight.new_zeros(self.n_layers, batch_size, self.hidden_dim)
@@ -73,7 +75,6 @@ class RNNModel(nn.Module):
             output, hidden_states,_ = self(input, hidden_states)
             logits = output[0, -1].squeeze().div(temperature).exp()
             logits_idx = torch.multinomial(logits, 1).unsqueeze(0)
-            # print(f"Toekns {i}| Input: {input.shape}| logits_idx: {logits_idx.shape}")
             input = torch.cat((input, logits_idx), dim = -1)
             word = decode[logits_idx.item()]
             text.append(word)
@@ -84,11 +85,10 @@ class LSTMCell(nn.Module):
     """Simple LSTMCell made from scratch.  The idea of LSTM is to remove the problem of
     vanishing gradients experienced by RNNs. Here, there are two hidden states: h, the short-term memory
     and c, the long-term memory. 
-    The new h is computed by the output gate (linear layer taking x, prev_h as inputs) and the tanh of the current 
-    long-term memory.
-    The current long term memory is computed with the forget gate multiplied by the prev long term and
-    by the input multiplied by the cell gate. So, some feature is added by the input gate and some removed by 
-    the forget gate.
+    The new h is computed by the output gate (linear layer taking x and previous h as inputs) and the tanh of the current 
+    long-term memory(c).
+    The current long-term memory is computed with the forget gate multiplied by the previous c and
+    by the input multiplied by the cell gate. So, some feature is added by the input gate and the forget gate removes some.
     For more information look at: https://arxiv.org/pdf/1402.1128.
     """
     def __init__(self, hidden_dim):
@@ -96,7 +96,7 @@ class LSTMCell(nn.Module):
         self.hidden_dim = hidden_dim
         self.sigm = nn.Sigmoid()
         self.tanh = nn.Tanh()
-        #LSTM input weights. Bias needed only once
+        #LSTM input weights. Bias is needed only once
         self.wx = nn.Linear(hidden_dim, hidden_dim * 4)
         self.wh = nn.Linear(hidden_dim, hidden_dim * 4, bias = False)
         
@@ -132,6 +132,7 @@ class StackedLSTM_scratch(nn.Module):
         self.hidden_dim = hidden_dim
         self.n_layers = n_layers
         self.emb = nn.Embedding(vocab_size, hidden_dim)
+        #stacking the LSTMs
         self.LSTMlayers = nn.ModuleList(
             [LSTMCell(hidden_dim) for _ in range(self.n_layers)])
         self.dec = nn.Linear(hidden_dim, vocab_size, bias = False)
@@ -171,7 +172,7 @@ class StackedLSTM_scratch(nn.Module):
             loss : loss of the model
             (h,c): hidden states 
         """
-
+        # batch, context
         B, C = x.size()
         x = x.transpose(0,1) #C,B. Easier to index
         x = self.drop(self.emb(x))
@@ -190,9 +191,11 @@ class StackedLSTM_scratch(nn.Module):
 
         out = []
         for char in range(C):
+            #input of the first LSTM cells are the embeddings of the tokens
             inp = x[char]
             for layer in range(self.n_layers):
                 h[layer], c[layer] = self.LSTMlayers[layer](inp, h[layer], c[layer] )   
+                #the compute h is the input of the second LSTM
                 inp = h[layer]
             out.append(h[-1])
         out = torch.stack(out).transpose(0,1)
