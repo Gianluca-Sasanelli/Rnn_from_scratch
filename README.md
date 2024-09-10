@@ -5,7 +5,7 @@ This project was primarily developed to deepen my understanding of Recurrent Neu
 1. **PyTorch-based RNN models**: Utilizing PyTorch's built-in RNN modules.
 2. **RNN from scratch**: Using pytorch module nn.Linear and nn.Embedding.
 
-The objective was to compare the training efficiency between these two approaches. Unsurprisingly, the PyTorch-based models are significantly faster, and I don't understand exactly why.
+The goal was to compare the training efficiency between these two approaches. Unsurprisingly, the PyTorch-based models are significantly faster, and I don't understand exactly why.
 
 ## Sampling from the Shakespeare Dataset
 
